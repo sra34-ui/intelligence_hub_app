@@ -1,0 +1,33 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}AI Insights Bot - Skyscanner Intelligence Hub{% endblock %}
+
+{% block page_title %}Travel Intelligence Conversation{% endblock %}
+{% block page_description %}Have a conversation with our AI assistant to explore insights across flights, hotels, packages, and customer reviews.{% endblock %}
+
+{% block content %}
+<div class="chat-page-container">
+    <div class="chat-container-full">
+        <div class="chat-messages" id="chatMessages"></div>
+
+        <div class="chat-input-container">
+            <form id="chatFormBottom" class="chat-form">
+                <textarea
+                    id="messageInputBottom"
+                    class="chat-input"
+                    placeholder="Ask about flights, hotels, packages, or customer reviews..."
+                    rows="1"
+                ></textarea>
+                <button type="submit" class="send-button" id="sendButtonBottom">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M2 10L18 2L10 18L8 11L2 10Z" fill="currentColor"/>
+                    </svg>
+                </button>
+            </form>
+            <button class="clear-button" id="clearButton">Clear Conversation</button>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}

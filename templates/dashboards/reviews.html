@@ -1,0 +1,552 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}Customer Reviews Intelligence - Skyscanner{% endblock %}
+
+{% block page_title %}Customer Reviews Intelligence{% endblock %}
+{% block page_description %}Sentiment analysis & customer feedback{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <!-- Overall Statistics -->
+    <div class="dashboard-card full-width">
+        <div class="card-header">
+            <h3>Review Overview</h3>
+        </div>
+        <div class="card-body">
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value skeleton" id="total-reviews">--</div>
+                    <div class="stat-label">Total Reviews</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value skeleton" id="avg-rating">--</div>
+                    <div class="stat-label">Avg Rating</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value skeleton" id="verified-pct">--</div>
+                    <div class="stat-label">Verified Purchases</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value skeleton" id="recommend-pct">--</div>
+                    <div class="stat-label">Would Recommend</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rating Distribution -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Rating Distribution</h3>
+        </div>
+        <div class="card-body">
+            <div class="chart-skeleton" id="ratingsChart-skeleton"></div>
+            <canvas id="ratingsChart" style="display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- Sentiment Analysis -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Sentiment Analysis</h3>
+        </div>
+        <div class="card-body">
+            <div class="chart-skeleton" id="sentimentChart-skeleton"></div>
+            <canvas id="sentimentChart" style="display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- Reviews by Item Type -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Reviews by Item Type</h3>
+        </div>
+        <div class="card-body">
+            <div class="chart-skeleton" id="itemTypesChart-skeleton"></div>
+            <canvas id="itemTypesChart" style="display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- Traveler Types -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Reviews by Traveler Type</h3>
+        </div>
+        <div class="card-body">
+            <div class="chart-skeleton" id="travelersChart-skeleton"></div>
+            <canvas id="travelersChart" style="display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- Top Rated Companies Table -->
+    <div class="dashboard-card full-width">
+        <div class="card-header">
+            <h3>Top Rated Companies</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Company</th>
+                            <th>Reviews</th>
+                            <th>Avg Rating</th>
+                            <th>Rating</th>
+                        </tr>
+                    </thead>
+                    <tbody id="companies-table">
+                        <tr>
+                            <td colspan="4" class="loading-cell">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include Chart.js with async loading -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" async></script>
+
+<script>
+// Color scheme
+const colors = {
+    primary: '#0770E3',
+    secondary: '#00D2B8',
+    warning: '#FFB700',
+    danger: '#FF6B6B',
+    info: '#9B51E0',
+    success: '#00C48C',
+    purple: '#7C3AED',
+    pink: '#EC4899',
+    orange: '#F97316',
+    teal: '#14B8A6'
+};
+
+// Wait for Chart.js library to load
+function waitForChartJS() {
+    return new Promise((resolve) => {
+        if (typeof Chart !== 'undefined') {
+            resolve();
+        } else {
+            const checkInterval = setInterval(() => {
+                if (typeof Chart !== 'undefined') {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 50);
+        }
+    });
+}
+
+// Fetch and display review stats
+async function loadReviewStats() {
+    try {
+        console.log('Starting to load review stats...');
+        const response = await fetch('/api/reviews/stats');
+        console.log('Response received:', response.status);
+        const data = await response.json();
+        console.log('Data received:', data);
+
+        // Update overall statistics and remove skeleton
+        requestAnimationFrame(() => {
+            const statsElements = [
+                { id: 'total-reviews', value: data.overall.total_reviews.toLocaleString() },
+                { id: 'avg-rating', value: data.overall.avg_rating.toFixed(2) + ' ⭐' },
+                { id: 'verified-pct', value: data.overall.verified_pct.toFixed(1) + '%' },
+                { id: 'recommend-pct', value: data.overall.recommend_pct.toFixed(1) + '%' }
+            ];
+
+            statsElements.forEach(stat => {
+                const el = document.getElementById(stat.id);
+                el.textContent = stat.value;
+                el.classList.remove('skeleton');
+            });
+        });
+
+        // Populate companies table immediately (no Chart.js needed)
+        populateCompaniesTable(data.companies);
+
+        // Wait for Chart.js to be available, then create charts
+        await waitForChartJS();
+
+        // Create charts with staggered rendering
+        requestAnimationFrame(() => createRatingsChart(data.ratings));
+        requestAnimationFrame(() => createSentimentChart(data.sentiment));
+        requestAnimationFrame(() => createItemTypesChart(data.item_types));
+        requestAnimationFrame(() => createTravelersChart(data.travelers));
+
+    } catch (error) {
+        console.error('Error loading review stats:', error);
+        alert('Error loading review data: ' + error.message);
+        document.getElementById('total-reviews').textContent = 'Error';
+        document.getElementById('avg-rating').textContent = 'Error';
+        document.getElementById('verified-pct').textContent = 'Error';
+        document.getElementById('recommend-pct').textContent = 'Error';
+    }
+    console.log('Finished loading review stats');
+}
+
+// Create ratings bar chart
+function createRatingsChart(ratings) {
+    document.getElementById('ratingsChart-skeleton').style.display = 'none';
+    const canvas = document.getElementById('ratingsChart');
+    canvas.style.display = 'block';
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ratings.map(r => r.rating + ' ⭐'),
+            datasets: [{
+                label: 'Number of Reviews',
+                data: ratings.map(r => r.count),
+                backgroundColor: [
+                    colors.danger,
+                    colors.orange,
+                    colors.warning,
+                    colors.info,
+                    colors.success
+                ],
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const rating = ratings[context.dataIndex];
+                            return 'Avg Helpful Votes: ' + rating.avg_helpful.toFixed(1);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Create sentiment pie chart
+function createSentimentChart(sentiment) {
+    document.getElementById('sentimentChart-skeleton').style.display = 'none';
+    const canvas = document.getElementById('sentimentChart');
+    canvas.style.display = 'block';
+    const ctx = canvas.getContext('2d');
+
+    // Ensure proper order
+    const order = ['Positive', 'Neutral', 'Negative'];
+    const sortedSentiment = order.map(s =>
+        sentiment.find(item => item.sentiment === s) || {sentiment: s, count: 0}
+    );
+
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: sortedSentiment.map(s => s.sentiment),
+            datasets: [{
+                data: sortedSentiment.map(s => s.count),
+                backgroundColor: [
+                    colors.success,
+                    colors.warning,
+                    colors.danger
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const s = sortedSentiment[context.dataIndex];
+                            const total = sortedSentiment.reduce((sum, item) => sum + item.count, 0);
+                            const pct = ((s.count / total) * 100).toFixed(1);
+                            return s.sentiment + ': ' + s.count.toLocaleString() + ' (' + pct + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Create item types bar chart
+function createItemTypesChart(itemTypes) {
+    document.getElementById('itemTypesChart-skeleton').style.display = 'none';
+    const canvas = document.getElementById('itemTypesChart');
+    canvas.style.display = 'block';
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: itemTypes.map(i => i.item_type),
+            datasets: [
+                {
+                    label: 'Avg Rating',
+                    data: itemTypes.map(i => i.avg_rating),
+                    backgroundColor: colors.primary,
+                    borderRadius: 8,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Recommend %',
+                    data: itemTypes.map(i => i.recommend_pct),
+                    backgroundColor: colors.secondary,
+                    borderRadius: 8,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Avg Rating (out of 5)'
+                    },
+                    max: 5
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Recommend %'
+                    },
+                    max: 100,
+                    grid: {
+                        drawOnChartArea: false,
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Create travelers doughnut chart
+function createTravelersChart(travelers) {
+    document.getElementById('travelersChart-skeleton').style.display = 'none';
+    const canvas = document.getElementById('travelersChart');
+    canvas.style.display = 'block';
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: travelers.map(t => t.traveler_type),
+            datasets: [{
+                data: travelers.map(t => t.count),
+                backgroundColor: [
+                    colors.primary,
+                    colors.secondary,
+                    colors.purple,
+                    colors.orange
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const t = travelers[context.dataIndex];
+                            return [
+                                t.traveler_type + ': ' + t.count.toLocaleString(),
+                                'Avg Rating: ' + t.avg_rating.toFixed(2) + ' ⭐'
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Populate companies table
+function populateCompaniesTable(companies) {
+    const tbody = document.getElementById('companies-table');
+    tbody.innerHTML = '';
+
+    companies.forEach(company => {
+        const row = document.createElement('tr');
+
+        // Create star rating display
+        const fullStars = Math.floor(company.avg_rating);
+        const hasHalfStar = company.avg_rating % 1 >= 0.5;
+        let stars = '⭐'.repeat(fullStars);
+        if (hasHalfStar) stars += '½';
+
+        row.innerHTML = `
+            <td><strong>${company.company_name}</strong></td>
+            <td>${company.review_count}</td>
+            <td>${company.avg_rating.toFixed(2)}</td>
+            <td>${stars}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded');
+    loadReviewStats();
+});
+</script>
+
+<style>
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.dashboard-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.dashboard-card.full-width {
+    grid-column: 1 / -1;
+}
+
+.card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.card-body {
+    padding: 24px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.stat-box {
+    text-align: center;
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #0770E3;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    text-align: left;
+    padding: 12px;
+    background: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.data-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+    color: #4b5563;
+}
+
+.data-table tr:hover {
+    background: #f9fafb;
+}
+
+.loading-cell {
+    text-align: center;
+    padding: 40px !important;
+    color: #9ca3af;
+}
+
+canvas {
+    max-height: 300px;
+}
+
+/* Skeleton loader animations */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 4px;
+    color: transparent !important;
+}
+
+.chart-skeleton {
+    width: 100%;
+    height: 300px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 8px;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+</style>
+{% endblock %}

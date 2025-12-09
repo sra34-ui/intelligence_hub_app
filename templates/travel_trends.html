@@ -1,0 +1,536 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}Travel Trends - Skyscanner{% endblock %}
+
+{% block page_title %}Travel Trends{% endblock %}
+{% block page_description %}Explore global travel trends and insights{% endblock %}
+
+{% block content %}
+<style>
+    .trends-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+
+    .trend-card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .trend-card h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #212529;
+        margin: 0 0 16px 0;
+    }
+
+    .destination-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .destination-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .destination-item:last-child {
+        border-bottom: none;
+    }
+
+    .destination-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .destination-rank {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: #f3f4f6;
+        border-radius: 50%;
+        font-weight: 700;
+        font-size: 14px;
+        color: #0770E3;
+    }
+
+    .destination-name {
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .destination-trend {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: #28A745;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .trend-down {
+        color: #DC3545;
+    }
+
+    .insights-section {
+        background: linear-gradient(135deg, #0770E3 0%, #00D2B8 100%);
+        color: white;
+        padding: 32px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+    }
+
+    .insights-section h2 {
+        margin: 0 0 16px 0;
+        font-size: 24px;
+        font-weight: 700;
+    }
+
+    .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-top: 24px;
+    }
+
+    .insight-box {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 20px;
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+    }
+
+    .insight-value {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .insight-label {
+        font-size: 14px;
+        opacity: 0.95;
+    }
+
+</style>
+
+<!-- Key Insights -->
+<div class="insights-section">
+    <h2>🌍 Global Travel Insights</h2>
+    <p>Latest trends from millions of searches across Skyscanner</p>
+
+    <div class="insights-grid">
+        <div class="insight-box">
+            <div class="insight-value">+23%</div>
+            <div class="insight-label">Searches vs Last Month</div>
+        </div>
+        <div class="insight-box">
+            <div class="insight-value">156</div>
+            <div class="insight-label">Trending Destinations</div>
+        </div>
+        <div class="insight-box">
+            <div class="insight-value">$847</div>
+            <div class="insight-label">Avg Flight Price</div>
+        </div>
+        <div class="insight-box">
+            <div class="insight-value">42%</div>
+            <div class="insight-label">Booking in Advance</div>
+        </div>
+    </div>
+</div>
+
+<!-- Trending Destinations -->
+<div class="trends-grid">
+    <div class="trend-card">
+        <h3>🔥 Top Trending Destinations</h3>
+        <ul class="destination-list">
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">1</div>
+                    <div class="destination-name">Tokyo, Japan</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +45%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">2</div>
+                    <div class="destination-name">Paris, France</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +38%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">3</div>
+                    <div class="destination-name">Dubai, UAE</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +32%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">4</div>
+                    <div class="destination-name">New York, USA</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +28%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">5</div>
+                    <div class="destination-name">Barcelona, Spain</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +25%
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="trend-card">
+        <h3>💰 Best Value Destinations</h3>
+        <ul class="destination-list">
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">1</div>
+                    <div class="destination-name">Bangkok, Thailand</div>
+                </div>
+                <div class="destination-trend">
+                    $420
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">2</div>
+                    <div class="destination-name">Lisbon, Portugal</div>
+                </div>
+                <div class="destination-trend">
+                    $485
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">3</div>
+                    <div class="destination-name">Mexico City, Mexico</div>
+                </div>
+                <div class="destination-trend">
+                    $520
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">4</div>
+                    <div class="destination-name">Prague, Czech Republic</div>
+                </div>
+                <div class="destination-trend">
+                    $560
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">5</div>
+                    <div class="destination-name">Istanbul, Turkey</div>
+                </div>
+                <div class="destination-trend">
+                    $595
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="trend-card">
+        <h3>🏖️ Beach Destinations</h3>
+        <ul class="destination-list">
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">1</div>
+                    <div class="destination-name">Maldives</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +52%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">2</div>
+                    <div class="destination-name">Bali, Indonesia</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +41%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">3</div>
+                    <div class="destination-name">Santorini, Greece</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +36%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">4</div>
+                    <div class="destination-name">Cancun, Mexico</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +29%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">5</div>
+                    <div class="destination-name">Phuket, Thailand</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +24%
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="trend-card">
+        <h3>🏔️ Adventure Destinations</h3>
+        <ul class="destination-list">
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">1</div>
+                    <div class="destination-name">Reykjavik, Iceland</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +48%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">2</div>
+                    <div class="destination-name">Queenstown, New Zealand</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +40%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">3</div>
+                    <div class="destination-name">Swiss Alps</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +34%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">4</div>
+                    <div class="destination-name">Patagonia, Chile</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +31%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">5</div>
+                    <div class="destination-name">Banff, Canada</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +27%
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="trend-card">
+        <h3>🏙️ City Breaks</h3>
+        <ul class="destination-list">
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">1</div>
+                    <div class="destination-name">London, UK</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +33%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">2</div>
+                    <div class="destination-name">Amsterdam, Netherlands</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +30%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">3</div>
+                    <div class="destination-name">Rome, Italy</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +28%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">4</div>
+                    <div class="destination-name">Singapore</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +26%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">5</div>
+                    <div class="destination-name">Berlin, Germany</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +22%
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="trend-card">
+        <h3>🎭 Cultural Hotspots</h3>
+        <ul class="destination-list">
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">1</div>
+                    <div class="destination-name">Kyoto, Japan</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +44%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">2</div>
+                    <div class="destination-name">Florence, Italy</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +37%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">3</div>
+                    <div class="destination-name">Athens, Greece</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +35%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">4</div>
+                    <div class="destination-name">Cairo, Egypt</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +29%
+                </div>
+            </li>
+            <li class="destination-item">
+                <div class="destination-info">
+                    <div class="destination-rank">5</div>
+                    <div class="destination-name">Marrakech, Morocco</div>
+                </div>
+                <div class="destination-trend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                    +24%
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>
+
+{% endblock %}

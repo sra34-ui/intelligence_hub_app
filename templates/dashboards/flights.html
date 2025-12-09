@@ -1,0 +1,544 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}Flights Data Intelligence - Skyscanner{% endblock %}
+
+{% block page_title %}Flights Data Intelligence{% endblock %}
+{% block page_description %}Routes, traffic & passenger data{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <!-- Overall Statistics -->
+    <div class="dashboard-card full-width">
+        <div class="card-header">
+            <h3>Flight Overview</h3>
+        </div>
+        <div class="card-body">
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value skeleton" id="total-flights">--</div>
+                    <div class="stat-label">Total Flights</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value skeleton" id="avg-price">--</div>
+                    <div class="stat-label">Avg Price (GBP)</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value skeleton" id="avg-duration">--</div>
+                    <div class="stat-label">Avg Duration (min)</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value skeleton" id="avg-seats">--</div>
+                    <div class="stat-label">Avg Available Seats</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Airlines Chart -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Top Airlines by Flight Count</h3>
+        </div>
+        <div class="card-body">
+            <div class="chart-skeleton" id="airlinesChart-skeleton"></div>
+            <canvas id="airlinesChart" style="display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- Price by Cabin Class -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Average Price by Cabin Class</h3>
+        </div>
+        <div class="card-body">
+            <div class="chart-skeleton" id="cabinClassChart-skeleton"></div>
+            <canvas id="cabinClassChart" style="display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- Top Routes Table -->
+    <div class="dashboard-card full-width">
+        <div class="card-header">
+            <h3>Top Routes</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Route</th>
+                            <th>Flight Count</th>
+                            <th>Avg Price</th>
+                            <th>Min Price</th>
+                        </tr>
+                    </thead>
+                    <tbody id="routes-table">
+                        <tr>
+                            <td colspan="4" class="loading-cell">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stops Analysis -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Flights by Number of Stops</h3>
+        </div>
+        <div class="card-body">
+            <div class="chart-skeleton" id="stopsChart-skeleton"></div>
+            <canvas id="stopsChart" style="display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- Price vs Duration by Stops -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Price vs Duration by Stops</h3>
+        </div>
+        <div class="card-body">
+            <div class="chart-skeleton" id="priceVsDurationChart-skeleton"></div>
+            <canvas id="priceVsDurationChart" style="display:none;"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Include Chart.js with async loading -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" async></script>
+
+<script>
+// Color scheme
+const colors = {
+    primary: '#0770E3',
+    secondary: '#00D2B8',
+    warning: '#FFB700',
+    danger: '#FF6B6B',
+    info: '#9B51E0',
+    success: '#00C48C',
+    purple: '#7C3AED',
+    pink: '#EC4899',
+    orange: '#F97316',
+    teal: '#14B8A6'
+};
+
+// Fetch and display flight stats
+async function loadFlightStats() {
+    try {
+        console.log('Starting to load flight stats...');
+        const response = await fetch('/api/flights/stats');
+        console.log('Response received:', response.status);
+        const data = await response.json();
+        console.log('Data received:', data);
+
+        // Update overall statistics and remove skeleton (immediate)
+        requestAnimationFrame(() => {
+            const statsElements = [
+                { id: 'total-flights', value: data.overall.total_flights.toLocaleString() },
+                { id: 'avg-price', value: '£' + data.overall.avg_price.toFixed(2) },
+                { id: 'avg-duration', value: data.overall.avg_duration.toLocaleString() },
+                { id: 'avg-seats', value: data.overall.avg_available_seats.toLocaleString() }
+            ];
+
+            statsElements.forEach(stat => {
+                const el = document.getElementById(stat.id);
+                el.textContent = stat.value;
+                el.classList.remove('skeleton');
+            });
+        });
+
+        // Populate routes table immediately (no Chart.js needed)
+        populateRoutesTable(data.routes);
+
+        // Wait for Chart.js to be available, then create charts
+        await waitForChartJS();
+
+        // Create charts with staggered rendering for smoother experience
+        requestAnimationFrame(() => createAirlinesChart(data.airlines));
+        requestAnimationFrame(() => createCabinClassChart(data.cabin_classes));
+        requestAnimationFrame(() => createStopsChart(data.stops));
+        requestAnimationFrame(() => createPriceVsDurationChart(data.stops));
+
+    } catch (error) {
+        console.error('Error loading flight stats:', error);
+        alert('Error loading flight data: ' + error.message);
+        document.getElementById('total-flights').textContent = 'Error';
+        document.getElementById('avg-price').textContent = 'Error';
+        document.getElementById('avg-duration').textContent = 'Error';
+        document.getElementById('avg-seats').textContent = 'Error';
+    }
+    console.log('Finished loading flight stats');
+}
+
+// Wait for Chart.js library to load
+function waitForChartJS() {
+    return new Promise((resolve) => {
+        if (typeof Chart !== 'undefined') {
+            resolve();
+        } else {
+            const checkInterval = setInterval(() => {
+                if (typeof Chart !== 'undefined') {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 50);
+        }
+    });
+}
+
+// Create airlines bar chart
+function createAirlinesChart(airlines) {
+    // Hide skeleton, show canvas
+    document.getElementById('airlinesChart-skeleton').style.display = 'none';
+    const canvas = document.getElementById('airlinesChart');
+    canvas.style.display = 'block';
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: airlines.map(a => a.airline),
+            datasets: [{
+                label: 'Number of Flights',
+                data: airlines.map(a => a.flight_count),
+                backgroundColor: colors.primary,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const airline = airlines[context.dataIndex];
+                            return [
+                                'Avg Price: £' + airline.avg_price.toFixed(2),
+                                'Avg Duration: ' + airline.avg_duration + ' min'
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Create cabin class pie chart
+function createCabinClassChart(cabinClasses) {
+    document.getElementById('cabinClassChart-skeleton').style.display = 'none';
+    const canvas = document.getElementById('cabinClassChart');
+    canvas.style.display = 'block';
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: cabinClasses.map(c => c.cabin_class),
+            datasets: [{
+                data: cabinClasses.map(c => c.avg_price),
+                backgroundColor: [
+                    colors.danger,
+                    colors.warning,
+                    colors.info,
+                    colors.secondary
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const cabin = cabinClasses[context.dataIndex];
+                            return [
+                                cabin.cabin_class + ': £' + cabin.avg_price.toFixed(2),
+                                'Count: ' + cabin.count.toLocaleString()
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Create stops bar chart
+function createStopsChart(stops) {
+    document.getElementById('stopsChart-skeleton').style.display = 'none';
+    const canvas = document.getElementById('stopsChart');
+    canvas.style.display = 'block';
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: stops.map(s => s.stops + (s.stops === 1 ? ' Stop' : ' Stops')),
+            datasets: [{
+                label: 'Number of Flights',
+                data: stops.map(s => s.count),
+                backgroundColor: [colors.success, colors.warning, colors.danger],
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Create price vs duration chart
+function createPriceVsDurationChart(stops) {
+    document.getElementById('priceVsDurationChart-skeleton').style.display = 'none';
+    const canvas = document.getElementById('priceVsDurationChart');
+    canvas.style.display = 'block';
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: stops.map(s => s.stops + (s.stops === 1 ? ' Stop' : ' Stops')),
+            datasets: [
+                {
+                    label: 'Avg Price (£)',
+                    data: stops.map(s => s.avg_price),
+                    borderColor: colors.primary,
+                    backgroundColor: colors.primary + '20',
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Avg Duration (min)',
+                    data: stops.map(s => s.avg_duration),
+                    borderColor: colors.secondary,
+                    backgroundColor: colors.secondary + '20',
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Price (£)'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Duration (min)'
+                    },
+                    grid: {
+                        drawOnChartArea: false,
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Populate routes table
+function populateRoutesTable(routes) {
+    const tbody = document.getElementById('routes-table');
+    tbody.innerHTML = '';
+
+    routes.forEach(route => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${route.origin} → ${route.destination}</strong></td>
+            <td>${route.flight_count}</td>
+            <td>£${route.avg_price.toFixed(2)}</td>
+            <td>£${route.min_price.toFixed(2)}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded');
+    loadFlightStats();
+});
+</script>
+
+<style>
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.dashboard-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.dashboard-card.full-width {
+    grid-column: 1 / -1;
+}
+
+.card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.card-body {
+    padding: 24px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.stat-box {
+    text-align: center;
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #0770E3;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    text-align: left;
+    padding: 12px;
+    background: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.data-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+    color: #4b5563;
+}
+
+.data-table tr:hover {
+    background: #f9fafb;
+}
+
+.loading-cell {
+    text-align: center;
+    padding: 40px !important;
+    color: #9ca3af;
+}
+
+canvas {
+    max-height: 300px;
+}
+
+/* Skeleton loader animations */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 4px;
+    color: transparent !important;
+}
+
+.chart-skeleton {
+    width: 100%;
+    height: 300px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 8px;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+</style>
+
+<script>
+// Force update the page title
+document.addEventListener('DOMContentLoaded', function() {
+    const titleElement = document.querySelector('.page-title');
+    if (titleElement && titleElement.textContent.trim() === 'Flights Intelligence') {
+        titleElement.textContent = 'Flights Data Intelligence';
+    }
+});
+</script>
+{% endblock %}

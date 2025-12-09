@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skyscanner Travel Intelligence Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="{{ url_for('static', filename='images/skyscanner_logo.png') }}" alt="Skyscanner" class="sidebar-logo">
+                <h3 class="sidebar-title">Intelligence Hub</h3>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item active">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="nav-icon">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill="currentColor"/>
+                    </svg>
+                    <span>Home</span>
+                </a>
+
+                <div class="nav-divider">AI Conversations</div>
+
+                <a href="/ai-chat" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="nav-icon">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/>
+                    </svg>
+                    <span>AI Insights Bot</span>
+                </a>
+
+                <div class="nav-divider">Dashboards</div>
+
+                <a href="/dashboards/flights" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="nav-icon">
+                        <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="currentColor"/>
+                    </svg>
+                    <span>Flights Intelligence</span>
+                </a>
+
+                <a href="/dashboards/hotels" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="nav-icon">
+                        <path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z" fill="currentColor"/>
+                    </svg>
+                    <span>Hotel Intelligence</span>
+                </a>
+
+                <a href="/dashboards/packages" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="nav-icon">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Packages Intelligence</span>
+                </a>
+
+                <a href="/dashboards/reviews" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="nav-icon">
+                        <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z" fill="currentColor"/>
+                    </svg>
+                    <span>Customer Reviews</span>
+                </a>
+
+                <div class="nav-divider">Data</div>
+
+                <a href="/data-access" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="nav-icon">
+                        <path d="M12 3C7.58 3 4 4.79 4 7s3.58 4 8 4 8-1.79 8-4-3.58-4-8-4zM4 9v3c0 2.21 3.58 4 8 4s8-1.79 8-4V9c0 2.21-3.58 4-8 4s-8-1.79-8-4zm0 5v3c0 2.21 3.58 4 8 4s8-1.79 8-4v-3c0 2.21-3.58 4-8 4s-8-1.79-8-4z" fill="currentColor"/>
+                    </svg>
+                    <span>Data Access</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" style="background: white;">
+            <!-- Hero Section -->
+            <section class="hero-section-home">
+                <div class="hero-content">
+                    <div class="ai-badge">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="badge-icon">
+                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/>
+                        </svg>
+                        AI-POWERED TRAVEL INTELLIGENCE
+                    </div>
+
+                    <h1 class="hero-title">
+                        <img src="{{ url_for('static', filename='images/skyscanner_logo.png') }}" alt="Skyscanner" class="hero-logo">
+                        Travel Intelligence <span class="gradient-text">Hub</span>
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        Gain intelligent insights across flights, hotels, travel packages, and customer sentiment—all powered by AI.<br>
+                        Ask natural-language questions to uncover pricing trends, market shifts, top-performing routes,<br>
+                        traveler sentiment, competitive benchmarks, and demand patterns across your entire travel portfolio.
+                    </p>
+
+                    <div class="hero-images-showcase">
+                        <div class="hero-image-card">
+                            <img src="{{ url_for('static', filename='images/flight.png') }}" alt="Flights Intelligence">
+                        </div>
+                        <div class="hero-image-card">
+                            <img src="{{ url_for('static', filename='images/hotels.png') }}" alt="Hotels Intelligence">
+                        </div>
+                    </div>
+
+                    <div class="search-container">
+                        <form id="chatForm" class="hero-search-form">
+                            <input
+                                type="text"
+                                id="messageInput"
+                                class="hero-search-input"
+                                placeholder="Ask: 'What are the main themes in customer feedback about our flights?'"
+                            >
+                            <button type="submit" class="hero-search-button" id="sendButton">
+                                AI Search
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Chat Section (Hidden by default, shown after first search) -->
+            <section class="chat-section" id="chatSection" style="display: none;">
+                <div class="chat-wrapper">
+                    <div class="editor-badge">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/>
+                        </svg>
+                        INTELLIGENCE INSIGHTS
+                    </div>
+
+                    <h2 class="chat-title">Travel Intelligence Conversation</h2>
+
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chatMessages"></div>
+
+                        <div class="chat-input-container">
+                            <form id="chatFormBottom" class="chat-form">
+                                <textarea
+                                    id="messageInputBottom"
+                                    class="chat-input"
+                                    placeholder="Continue your conversation..."
+                                    rows="1"
+                                ></textarea>
+                                <button type="submit" class="send-button" id="sendButtonBottom">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                        <path d="M2 10L18 2L10 18L8 11L2 10Z" fill="currentColor"/>
+                                    </svg>
+                                </button>
+                            </form>
+                            <button class="clear-button" id="clearButton">Clear Conversation</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dashboards Section -->
+            <section class="dashboards-section">
+                <div class="editor-badge">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/>
+                    </svg>
+                    INTELLIGENCE DASHBOARDS
+                </div>
+
+                <h2 class="featured-title">Explore Intelligence Dashboards</h2>
+                <p class="featured-subtitle">
+                    Access comprehensive analytics and insights across all travel categories.<br>
+                    Deep-dive into data-driven intelligence for flights, hotels, packages, and customer feedback.
+                </p>
+
+                <div class="dashboard-cards-grid">
+                    <a href="/dashboards/flights" class="dashboard-card-link">
+                        <div class="dashboard-card-home">
+                            <div class="dashboard-icon">
+                                <img src="{{ url_for('static', filename='images/flight.png') }}" alt="Flights" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+                            </div>
+                            <h3>Flights Intelligence</h3>
+                            <p>Routes, traffic & passenger data</p>
+                        </div>
+                    </a>
+
+                    <a href="/dashboards/hotels" class="dashboard-card-link">
+                        <div class="dashboard-card-home">
+                            <div class="dashboard-icon">
+                                <img src="{{ url_for('static', filename='images/hotels.png') }}" alt="Hotels" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+                            </div>
+                            <h3>Hotel Intelligence</h3>
+                            <p>Occupancy, pricing & performance</p>
+                        </div>
+                    </a>
+
+                    <a href="/dashboards/packages" class="dashboard-card-link">
+                        <div class="dashboard-card-home">
+                            <div class="dashboard-icon">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <h3>Packages Intelligence</h3>
+                            <p>Travel packages & bundled offerings</p>
+                        </div>
+                    </a>
+
+                    <a href="/dashboards/reviews" class="dashboard-card-link">
+                        <div class="dashboard-card-home">
+                            <div class="dashboard-icon">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                                    <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z" fill="currentColor"/>
+                                </svg>
+                            </div>
+                            <h3>Customer Reviews</h3>
+                            <p>Sentiment analysis & feedback</p>
+                        </div>
+                    </a>
+                </div>
+            </section>
+
+            <!-- AI Assistant Section -->
+            <section class="featured-section">
+                <div class="editor-badge">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/>
+                    </svg>
+                    AI ASSISTANT
+                </div>
+
+                <h2 class="featured-title">Ask Our AI Assistant</h2>
+                <p class="featured-subtitle">
+                    Get instant answers to your travel intelligence queries.<br>
+                    Our multi-agent AI system can analyze data and provide insights across all categories.
+                </p>
+
+                <div class="suggestion-chips">
+                    <button class="suggestion-chip">Which hotels are top performers?</button>
+                    <button class="suggestion-chip">What are customers saying about my packages?</button>
+                    <button class="suggestion-chip">Show me flight pricing trends for European routes</button>
+                    <button class="suggestion-chip">Analyze customer sentiment from recent reviews</button>
+                    <button class="suggestion-chip">Compare hotel occupancy rates by location</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+    <style>
+        .hero-images-showcase {
+            display: flex;
+            gap: 24px;
+            margin: 40px 0;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hero-image-card {
+            flex: 1;
+            max-width: 400px;
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .hero-image-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+        }
+
+        .hero-image-card img {
+            width: 100%;
+            height: 240px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .hero-image-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+            color: white;
+            padding: 20px 16px 12px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .hero-images-showcase {
+                flex-direction: column;
+            }
+
+            .hero-image-card {
+                max-width: 100%;
+            }
+        }
+    </style>
+</body>
+</html>

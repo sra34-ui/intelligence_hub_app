@@ -1,0 +1,16 @@
+command:
+  - "sh"
+  - "-c"
+  - "gunicorn app:app --bind 0.0.0.0:$DATABRICKS_APP_PORT --workers 4 --timeout 300"
+
+env:
+  - name: DATABRICKS_SERVING_ENDPOINT
+    value: mas-0359371c-endpoint
+  - name: FLASK_SECRET_KEY
+    value: skyscanner-intelligence-hub-secret-key-change-in-production
+  - name: CATALOG
+    value: users
+  - name: SCHEMA
+    value: sultan_alawar
+  - name: DATABRICKS_WAREHOUSE_ID
+    value: 03560442e95cb440

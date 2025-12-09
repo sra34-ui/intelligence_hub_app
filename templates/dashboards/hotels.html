@@ -1,0 +1,334 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}Hotel Intelligence - Skyscanner{% endblock %}
+
+{% block page_title %}Hotel Intelligence{% endblock %}
+{% block page_description %}Occupancy, pricing & performance analytics{% endblock %}
+
+{% block content %}
+<!-- Overall Stats -->
+<div class="dashboard-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px;">
+    <div class="dashboard-card">
+        <div class="card-body" style="text-align: center;">
+            <div class="stat-value skeleton" id="totalHotels">--</div>
+            <div class="stat-label">Total Hotels</div>
+        </div>
+    </div>
+    <div class="dashboard-card">
+        <div class="card-body" style="text-align: center;">
+            <div class="stat-value skeleton" id="avgRating">--</div>
+            <div class="stat-label">Avg Rating</div>
+        </div>
+    </div>
+    <div class="dashboard-card">
+        <div class="card-body" style="text-align: center;">
+            <div class="stat-value skeleton" id="avgPrice">--</div>
+            <div class="stat-label">Avg Price/Night</div>
+        </div>
+    </div>
+    <div class="dashboard-card">
+        <div class="card-body" style="text-align: center;">
+            <div class="stat-value skeleton" id="topCity">--</div>
+            <div class="stat-label">Top Rated City</div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Visualizations -->
+<div class="dashboard-grid">
+    <!-- Cities with Highest Star Ratings -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Cities with Highest Star Ratings</h3>
+        </div>
+        <div class="card-body">
+            <div class="chart-skeleton" id="citiesChart-skeleton"></div>
+            <canvas id="citiesChart" style="max-height: 400px; display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- Price by Room Type -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Average Price by Room Type</h3>
+        </div>
+        <div class="card-body">
+            <div class="chart-skeleton" id="roomPriceChart-skeleton"></div>
+            <canvas id="roomPriceChart" style="max-height: 400px; display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- Amenities Breakdown -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Hotels with Free Breakfast & Cancellation</h3>
+        </div>
+        <div class="card-body">
+            <div class="chart-skeleton" id="amenitiesChart-skeleton"></div>
+            <canvas id="amenitiesChart" style="max-height: 400px; display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- Additional Info -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Key Insights</h3>
+        </div>
+        <div class="card-body">
+            <ul id="insightsList" style="list-style: none; padding: 0;">
+                <li style="padding: 12px; margin-bottom: 8px; background: #f8f9fa; border-radius: 8px;">
+                    <strong>Loading insights...</strong>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Include Chart.js with async loading -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" async></script>
+
+<script>
+// Wait for Chart.js library to load
+function waitForChartJS() {
+    return new Promise((resolve) => {
+        if (typeof Chart !== 'undefined') {
+            resolve();
+        } else {
+            const checkInterval = setInterval(() => {
+                if (typeof Chart !== 'undefined') {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 50);
+        }
+    });
+}
+
+// Fetch and display hotel statistics
+async function loadHotelStats() {
+    try {
+        const response = await fetch('/api/hotels/stats');
+        const data = await response.json();
+
+        // Update overall stats and remove skeleton
+        requestAnimationFrame(() => {
+            const totalEl = document.getElementById('totalHotels');
+            totalEl.textContent = data.overall.total_hotels.toLocaleString();
+            totalEl.classList.remove('skeleton');
+
+            const ratingEl = document.getElementById('avgRating');
+            ratingEl.textContent = data.overall.avg_rating.toFixed(1) + ' ⭐';
+            ratingEl.classList.remove('skeleton');
+
+            const priceEl = document.getElementById('avgPrice');
+            priceEl.textContent = '$' + data.overall.avg_price.toFixed(0);
+            priceEl.classList.remove('skeleton');
+
+            const cityEl = document.getElementById('topCity');
+            cityEl.textContent = data.cities[0].city;
+            cityEl.classList.remove('skeleton');
+        });
+
+        // Generate insights immediately
+        generateInsights(data);
+
+        // Wait for Chart.js to be available, then create charts
+        await waitForChartJS();
+
+        // Create charts with staggered rendering
+        requestAnimationFrame(() => createCitiesChart(data.cities));
+        requestAnimationFrame(() => createRoomPriceChart(data.room_prices));
+        requestAnimationFrame(() => createAmenitiesChart(data.amenities));
+
+    } catch (error) {
+        console.error('Error loading hotel stats:', error);
+        document.getElementById('totalHotels').textContent = 'Error';
+        document.getElementById('avgRating').textContent = 'Error';
+        document.getElementById('avgPrice').textContent = 'Error';
+        document.getElementById('topCity').textContent = 'Error';
+    }
+}
+
+// Create Cities Chart
+function createCitiesChart(cities) {
+        document.getElementById('citiesChart-skeleton').style.display = 'none';
+        const canvas = document.getElementById('citiesChart');
+        canvas.style.display = 'block';
+        const citiesCtx = canvas.getContext('2d');
+        new Chart(citiesCtx, {
+            type: 'bar',
+            data: {
+                labels: cities.map(c => c.city),
+                datasets: [{
+                    label: 'Average Star Rating',
+                    data: cities.map(c => c.avg_rating),
+                    backgroundColor: 'rgba(7, 112, 227, 0.7)',
+                    borderColor: 'rgba(7, 112, 227, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 5,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(1) + ' ⭐';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+}
+
+// Create Room Price Chart
+function createRoomPriceChart(room_prices) {
+        document.getElementById('roomPriceChart-skeleton').style.display = 'none';
+        const canvas = document.getElementById('roomPriceChart');
+        canvas.style.display = 'block';
+        const roomPriceCtx = canvas.getContext('2d');
+        new Chart(roomPriceCtx, {
+            type: 'bar',
+            data: {
+                labels: room_prices.map(r => r.room_type),
+                datasets: [{
+                    label: 'Average Price ($)',
+                    data: room_prices.map(r => r.avg_price),
+                    backgroundColor: [
+                        'rgba(220, 53, 69, 0.7)',
+                        'rgba(255, 193, 7, 0.7)',
+                        'rgba(40, 167, 69, 0.7)',
+                        'rgba(23, 162, 184, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(220, 53, 69, 1)',
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(23, 162, 184, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+}
+
+// Create Amenities Chart
+function createAmenitiesChart(amenities) {
+        document.getElementById('amenitiesChart-skeleton').style.display = 'none';
+        const canvas = document.getElementById('amenitiesChart');
+        canvas.style.display = 'block';
+        const amenitiesCtx = canvas.getContext('2d');
+        new Chart(amenitiesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: amenities.map(a => a.type),
+                datasets: [{
+                    data: amenities.map(a => a.count),
+                    backgroundColor: [
+                        'rgba(102, 126, 234, 0.8)',
+                        'rgba(118, 75, 162, 0.8)',
+                        'rgba(7, 112, 227, 0.8)',
+                        'rgba(108, 117, 125, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(102, 126, 234, 1)',
+                        'rgba(118, 75, 162, 1)',
+                        'rgba(7, 112, 227, 1)',
+                        'rgba(108, 117, 125, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+}
+
+// Generate insights
+function generateInsights(data) {
+    const insights = [
+        `<strong>${data.cities[0].city}</strong> has the highest average rating at <strong>${data.cities[0].avg_rating.toFixed(1)} stars</strong> with <strong>${data.cities[0].count}</strong> hotels`,
+        `<strong>${data.room_prices[0].room_type}</strong> rooms are the most expensive at <strong>$${data.room_prices[0].avg_price.toFixed(0)}</strong> per night on average`,
+        `<strong>${data.amenities[0].count}</strong> hotels offer both free breakfast and free cancellation`,
+        `Price difference between Suite and Economy rooms is <strong>$${(data.room_prices[0].avg_price - data.room_prices[3].avg_price).toFixed(0)}</strong>`
+    ];
+
+    const insightsList = document.getElementById('insightsList');
+    insightsList.innerHTML = insights.map(insight => `
+        <li style="padding: 12px; margin-bottom: 8px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #0770E3;">
+            ${insight}
+        </li>
+    `).join('');
+}
+
+// Load stats when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadHotelStats();
+});
+</script>
+
+<style>
+/* Skeleton loader animations */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 4px;
+    color: transparent !important;
+}
+
+.chart-skeleton {
+    width: 100%;
+    height: 400px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 8px;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+</style>
+{% endblock %}

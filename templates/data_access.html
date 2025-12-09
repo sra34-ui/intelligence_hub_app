@@ -1,0 +1,96 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}Data Access - Skyscanner Intelligence Hub{% endblock %}
+
+{% block page_title %}Data Access{% endblock %}
+{% block page_description %}Access and explore raw data from Unity Catalog tables.{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Unity Catalog Tables</h3>
+        </div>
+        <div class="card-body">
+            <p>Access your travel data stored in Databricks Unity Catalog:</p>
+            <ul>
+                <li><strong>Flights Dataset</strong> - Flight routes, pricing, and availability data</li>
+                <li><strong>Hotels Dataset</strong> - Hotel listings, ratings, and pricing information</li>
+                <li><strong>Packages Dataset</strong> - Travel package offerings and details</li>
+                <li><strong>Reviews Dataset</strong> - Customer reviews and sentiment analysis</li>
+            </ul>
+
+            <div class="placeholder-text">
+                Data explorer and query interface coming soon
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Quick Actions</h3>
+        </div>
+        <div class="card-body">
+            <p>Use the AI Chat to query your data with natural language:</p>
+            <ul>
+                <li>Ask questions about specific data points</li>
+                <li>Request aggregations and analysis</li>
+                <li>Compare metrics across different categories</li>
+                <li>Generate insights from customer feedback</li>
+            </ul>
+
+            <div style="margin-top: 24px;">
+                <a href="/ai-chat" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                    Go to AI Chat
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Data Summary</h3>
+        </div>
+        <div class="card-body">
+            <p>Overview of available data:</p>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value">~1K</div>
+                    <div class="stat-label">Flight Records</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">~500</div>
+                    <div class="stat-label">Hotel Listings</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">~300</div>
+                    <div class="stat-label">Package Offers</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">~800</div>
+                    <div class="stat-label">Customer Reviews</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Data Freshness</h3>
+        </div>
+        <div class="card-body">
+            <p>All data is synced from Unity Catalog tables and updated in real-time.</p>
+            <ul>
+                <li>Tables are managed through Databricks Unity Catalog</li>
+                <li>Data quality and governance policies are enforced</li>
+                <li>Access control is managed through UC permissions</li>
+            </ul>
+
+            <div class="placeholder-text">
+                Last sync information will appear here
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

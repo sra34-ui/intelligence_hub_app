@@ -1,0 +1,529 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}Packages Intelligence - Skyscanner{% endblock %}
+
+{% block page_title %}Packages Intelligence{% endblock %}
+{% block page_description %}Travel packages & bundled offerings{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <!-- Overall Statistics -->
+    <div class="dashboard-card full-width">
+        <div class="card-header">
+            <h3>Package Overview</h3>
+        </div>
+        <div class="card-body">
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value skeleton" id="total-packages">--</div>
+                    <div class="stat-label">Total Packages</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value skeleton" id="avg-price">--</div>
+                    <div class="stat-label">Avg Price (GBP)</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value skeleton" id="avg-duration">--</div>
+                    <div class="stat-label">Avg Duration (days)</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value skeleton" id="avg-discount">--</div>
+                    <div class="stat-label">Avg Discount (%)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Package Types Chart -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Package Types Distribution</h3>
+        </div>
+        <div class="card-body">
+            <div class="chart-skeleton" id="packageTypesChart-skeleton"></div>
+            <canvas id="packageTypesChart" style="display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- Top Destinations Chart -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Top Destinations</h3>
+        </div>
+        <div class="card-body">
+            <div class="chart-skeleton" id="destinationsChart-skeleton"></div>
+            <canvas id="destinationsChart" style="display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- Duration Distribution -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Package Duration Distribution</h3>
+        </div>
+        <div class="card-body">
+            <div class="chart-skeleton" id="durationsChart-skeleton"></div>
+            <canvas id="durationsChart" style="display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- Price by Duration -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Price by Duration Range</h3>
+        </div>
+        <div class="card-body">
+            <div class="chart-skeleton" id="priceDurationChart-skeleton"></div>
+            <canvas id="priceDurationChart" style="display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- Top Routes Table -->
+    <div class="dashboard-card full-width">
+        <div class="card-header">
+            <h3>Popular Routes</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Route</th>
+                            <th>Package Count</th>
+                            <th>Avg Price</th>
+                        </tr>
+                    </thead>
+                    <tbody id="routes-table">
+                        <tr>
+                            <td colspan="3" class="loading-cell">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include Chart.js with async loading -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" async></script>
+
+<script>
+// Color scheme
+const colors = {
+    primary: '#0770E3',
+    secondary: '#00D2B8',
+    warning: '#FFB700',
+    danger: '#FF6B6B',
+    info: '#9B51E0',
+    success: '#00C48C',
+    purple: '#7C3AED',
+    pink: '#EC4899',
+    orange: '#F97316',
+    teal: '#14B8A6'
+};
+
+// Wait for Chart.js library to load
+function waitForChartJS() {
+    return new Promise((resolve) => {
+        if (typeof Chart !== 'undefined') {
+            resolve();
+        } else {
+            const checkInterval = setInterval(() => {
+                if (typeof Chart !== 'undefined') {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 50);
+        }
+    });
+}
+
+// Fetch and display package stats
+async function loadPackageStats() {
+    try {
+        console.log('Starting to load package stats...');
+        const response = await fetch('/api/packages/stats');
+        console.log('Response received:', response.status);
+        const data = await response.json();
+        console.log('Data received:', data);
+
+        // Update overall statistics and remove skeleton
+        requestAnimationFrame(() => {
+            const statsElements = [
+                { id: 'total-packages', value: data.overall.total_packages.toLocaleString() },
+                { id: 'avg-price', value: '£' + data.overall.avg_price.toFixed(2) },
+                { id: 'avg-duration', value: data.overall.avg_duration.toLocaleString() + ' days' },
+                { id: 'avg-discount', value: data.overall.avg_discount.toFixed(1) + '%' }
+            ];
+
+            statsElements.forEach(stat => {
+                const el = document.getElementById(stat.id);
+                el.textContent = stat.value;
+                el.classList.remove('skeleton');
+            });
+        });
+
+        // Populate routes table immediately (no Chart.js needed)
+        populateRoutesTable(data.routes);
+
+        // Wait for Chart.js to be available, then create charts
+        await waitForChartJS();
+
+        // Create charts with staggered rendering
+        requestAnimationFrame(() => createPackageTypesChart(data.package_types));
+        requestAnimationFrame(() => createDestinationsChart(data.destinations));
+        requestAnimationFrame(() => createDurationsChart(data.durations));
+        requestAnimationFrame(() => createPriceDurationChart(data.durations));
+
+    } catch (error) {
+        console.error('Error loading package stats:', error);
+        alert('Error loading package data: ' + error.message);
+        document.getElementById('total-packages').textContent = 'Error';
+        document.getElementById('avg-price').textContent = 'Error';
+        document.getElementById('avg-duration').textContent = 'Error';
+        document.getElementById('avg-discount').textContent = 'Error';
+    }
+    console.log('Finished loading package stats');
+}
+
+// Create package types doughnut chart
+function createPackageTypesChart(packageTypes) {
+    document.getElementById('packageTypesChart-skeleton').style.display = 'none';
+    const canvas = document.getElementById('packageTypesChart');
+    canvas.style.display = 'block';
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: packageTypes.map(p => p.package_type),
+            datasets: [{
+                data: packageTypes.map(p => p.package_count),
+                backgroundColor: [
+                    colors.primary,
+                    colors.secondary,
+                    colors.warning,
+                    colors.info,
+                    colors.success
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const pkg = packageTypes[context.dataIndex];
+                            return [
+                                pkg.package_type + ': ' + pkg.package_count.toLocaleString(),
+                                'Avg Price: £' + pkg.avg_price.toFixed(2),
+                                'Avg Duration: ' + pkg.avg_duration + ' days'
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Create destinations bar chart
+function createDestinationsChart(destinations) {
+    document.getElementById('destinationsChart-skeleton').style.display = 'none';
+    const canvas = document.getElementById('destinationsChart');
+    canvas.style.display = 'block';
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: destinations.map(d => d.destination),
+            datasets: [{
+                label: 'Number of Packages',
+                data: destinations.map(d => d.package_count),
+                backgroundColor: colors.secondary,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            indexAxis: 'y',
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const dest = destinations[context.dataIndex];
+                            return [
+                                'Avg Price: £' + dest.avg_price.toFixed(2),
+                                'Min Price: £' + dest.min_price.toFixed(2)
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Create durations bar chart
+function createDurationsChart(durations) {
+    document.getElementById('durationsChart-skeleton').style.display = 'none';
+    const canvas = document.getElementById('durationsChart');
+    canvas.style.display = 'block';
+    const ctx = canvas.getContext('2d');
+
+    // Order durations correctly
+    const order = ['1-3 days', '4-7 days', '8-14 days', '15+ days'];
+    const sortedDurations = order.map(range =>
+        durations.find(d => d.duration_range === range) || {duration_range: range, count: 0}
+    );
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: sortedDurations.map(d => d.duration_range),
+            datasets: [{
+                label: 'Number of Packages',
+                data: sortedDurations.map(d => d.count),
+                backgroundColor: [colors.success, colors.primary, colors.warning, colors.danger],
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Create price vs duration line chart
+function createPriceDurationChart(durations) {
+    document.getElementById('priceDurationChart-skeleton').style.display = 'none';
+    const canvas = document.getElementById('priceDurationChart');
+    canvas.style.display = 'block';
+    const ctx = canvas.getContext('2d');
+
+    // Order durations correctly
+    const order = ['1-3 days', '4-7 days', '8-14 days', '15+ days'];
+    const sortedDurations = order.map(range =>
+        durations.find(d => d.duration_range === range) || {duration_range: range, avg_price: 0}
+    );
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: sortedDurations.map(d => d.duration_range),
+            datasets: [{
+                label: 'Avg Price (£)',
+                data: sortedDurations.map(d => d.avg_price),
+                borderColor: colors.primary,
+                backgroundColor: colors.primary + '20',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const dur = sortedDurations[context.dataIndex];
+                            return 'Avg Days: ' + (dur.avg_days ? dur.avg_days.toFixed(1) : 'N/A');
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '£' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Populate routes table
+function populateRoutesTable(routes) {
+    const tbody = document.getElementById('routes-table');
+    tbody.innerHTML = '';
+
+    routes.forEach(route => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${route.departure_city} → ${route.destination}</strong></td>
+            <td>${route.package_count}</td>
+            <td>£${route.avg_price.toFixed(2)}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded');
+    loadPackageStats();
+});
+</script>
+
+<style>
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.dashboard-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.dashboard-card.full-width {
+    grid-column: 1 / -1;
+}
+
+.card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.card-body {
+    padding: 24px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.stat-box {
+    text-align: center;
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #0770E3;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    text-align: left;
+    padding: 12px;
+    background: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.data-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+    color: #4b5563;
+}
+
+.data-table tr:hover {
+    background: #f9fafb;
+}
+
+.loading-cell {
+    text-align: center;
+    padding: 40px !important;
+    color: #9ca3af;
+}
+
+canvas {
+    max-height: 300px;
+}
+
+/* Skeleton loader animations */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 4px;
+    color: transparent !important;
+}
+
+.chart-skeleton {
+    width: 100%;
+    height: 300px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 8px;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+</style>
+{% endblock %}
