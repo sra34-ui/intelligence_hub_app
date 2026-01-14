@@ -398,8 +398,8 @@ body {
 }
 
 .dashboard-icon {
-    width: 80px;
-    height: 80px;
+    width: 140px;
+    height: 140px;
     background: linear-gradient(135deg, #0770E3 0%, #005AB5 100%);
     border-radius: 16px;
     display: flex;
@@ -407,6 +407,7 @@ body {
     justify-content: center;
     margin-bottom: 20px;
     color: white;
+    overflow: hidden;
 }
 
 .dashboard-card-home h3 {

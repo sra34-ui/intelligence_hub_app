@@ -1,5 +1,9 @@
 {% extends "base_dashboard.html" %}
 
+{% block insights_bot %}
+{% include 'partials/insights_bot.html' %}
+{% endblock %}
+
 {% block title %}Flights Data Intelligence - Skyscanner{% endblock %}
 
 {% block page_title %}Flights Data Intelligence{% endblock %}
@@ -9,8 +13,16 @@
 <div class="dashboard-grid">
     <!-- Overall Statistics -->
     <div class="dashboard-card full-width">
-        <div class="card-header">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
             <h3>Flight Overview</h3>
+            <a href="https://e2-demo-field-eng.cloud.databricks.com/genie/rooms/01f0cc5da5541a1e8b3b5ab7170eb7d1?o=1444828305810485"
+               target="_blank"
+               class="genie-room-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/>
+                </svg>
+                Query the data using Genie
+            </a>
         </div>
         <div class="card-body">
             <div class="stats-grid">

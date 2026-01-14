@@ -1,0 +1,287 @@
+<!-- Insights Bot Pop-up -->
+<div class="insights-bot-container">
+    <!-- Floating Button -->
+    <button class="insights-bot-trigger" id="insightsBotTrigger" title="Open Insights Bot">
+        <img src="{{ url_for('static', filename='images/user.png') }}" alt="Bot" class="bot-icon bot-avatar">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" class="close-icon" style="display: none;">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
+        </svg>
+        <span class="bot-pulse"></span>
+    </button>
+
+    <!-- Pop-up Panel -->
+    <div class="insights-bot-panel" id="insightsBotPanel">
+        <div class="insights-bot-header">
+            <div class="insights-bot-title">
+                <img src="{{ url_for('static', filename='images/user.png') }}" alt="Bot" class="header-bot-avatar">
+                <span>Insights Assistant</span>
+            </div>
+            <button class="insights-bot-close" id="insightsBotClose">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="insights-bot-body">
+            <p class="insights-bot-description">Hi there! I can help you analyze data and generate recommendations from your synced tables.</p>
+
+            <!-- Company Name Input -->
+            <div class="insights-form-group">
+                <label for="companyNameInput">Company Name</label>
+                <input type="text" id="companyNameInput" class="insights-input" placeholder="Enter company name...">
+            </div>
+
+            <!-- Date Filter -->
+            <div class="insights-form-group">
+                <label>Date Range</label>
+                <div class="insights-date-row">
+                    <input type="date" id="startDateInput" class="insights-input insights-date">
+                    <span class="date-separator">to</span>
+                    <input type="date" id="endDateInput" class="insights-input insights-date">
+                </div>
+            </div>
+
+            <!-- Insight Attribute Dropdown -->
+            <div class="insights-form-group">
+                <label for="insightAttributeSelect">Insight Attribute</label>
+                <select id="insightAttributeSelect" class="insights-select">
+                    <option value="" disabled selected>Select an attribute...</option>
+                    <optgroup label="Flights">
+                        <option value="flights.airline">Airline</option>
+                        <option value="flights.origin">Origin</option>
+                        <option value="flights.destination">Destination</option>
+                        <option value="flights.price">Price</option>
+                        <option value="flights.cabin_class">Cabin Class</option>
+                        <option value="flights.duration_minutes">Duration</option>
+                        <option value="flights.stops">Stops</option>
+                        <option value="flights.available_seats">Available Seats</option>
+                    </optgroup>
+                    <optgroup label="Hotels">
+                        <option value="hotels.hotel_name">Hotel Name</option>
+                        <option value="hotels.city">City</option>
+                        <option value="hotels.star_rating">Star Rating</option>
+                        <option value="hotels.room_type">Room Type</option>
+                        <option value="hotels.total_price">Total Price</option>
+                        <option value="hotels.free_breakfast">Free Breakfast</option>
+                        <option value="hotels.free_cancellation">Free Cancellation</option>
+                    </optgroup>
+                    <optgroup label="Packages">
+                        <option value="packages.package_type">Package Type</option>
+                        <option value="packages.destination">Destination</option>
+                        <option value="packages.departure_city">Departure City</option>
+                        <option value="packages.duration_days">Duration (Days)</option>
+                        <option value="packages.final_price">Final Price</option>
+                        <option value="packages.discount_percentage">Discount %</option>
+                    </optgroup>
+                    <optgroup label="Reviews">
+                        <option value="reviews.rating">Rating</option>
+                        <option value="reviews.item_type">Item Type</option>
+                        <option value="reviews.company_name">Company Name</option>
+                        <option value="reviews.traveler_type">Traveler Type</option>
+                        <option value="reviews.would_recommend">Would Recommend</option>
+                        <option value="reviews.verified_purchase">Verified Purchase</option>
+                        <option value="reviews.helpful_votes">Helpful Votes</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <!-- Generate Button -->
+            <button class="insights-generate-btn" id="insightsGenerateBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/>
+                </svg>
+                Generate Next Best Recommendation
+            </button>
+
+            <!-- Results Area -->
+            <div class="insights-results" id="insightsResults">
+                <div class="insights-placeholder">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" fill="currentColor"/>
+                    </svg>
+                    <p>Configure filters above and click "Generate Next Best Recommendation" to see results</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Insights Bot Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const trigger = document.getElementById('insightsBotTrigger');
+    const panel = document.getElementById('insightsBotPanel');
+    const closeBtn = document.getElementById('insightsBotClose');
+    const generateBtn = document.getElementById('insightsGenerateBtn');
+    const botIcon = trigger.querySelector('.bot-icon');
+    const closeIcon = trigger.querySelector('.close-icon');
+
+    // Toggle panel
+    trigger.addEventListener('click', function() {
+        const isOpen = panel.classList.toggle('open');
+        botIcon.style.display = isOpen ? 'none' : 'block';
+        closeIcon.style.display = isOpen ? 'block' : 'none';
+        trigger.classList.toggle('active', isOpen);
+    });
+
+    // Close panel
+    closeBtn.addEventListener('click', function() {
+        panel.classList.remove('open');
+        botIcon.style.display = 'block';
+        closeIcon.style.display = 'none';
+        trigger.classList.remove('active');
+    });
+
+    // Generate insights
+    generateBtn.addEventListener('click', async function() {
+        const results = document.getElementById('insightsResults');
+        const companyName = document.getElementById('companyNameInput').value;
+        const startDate = document.getElementById('startDateInput').value;
+        const endDate = document.getElementById('endDateInput').value;
+        const attribute = document.getElementById('insightAttributeSelect').value;
+
+        if (!attribute) {
+            results.innerHTML = `
+                <div class="insights-placeholder insights-error">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="#FF6B6B"/>
+                    </svg>
+                    <p>Please select an insight attribute</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Show loading state
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="spin">
+                <path d="M12 2v4m0 12v4m10-10h-4M6 12H2m15.07-7.07l-2.83 2.83M9.76 14.24l-2.83 2.83m12.14 0l-2.83-2.83M9.76 9.76L6.93 6.93" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Analyzing...
+        `;
+        results.innerHTML = `
+            <div class="insights-loading">
+                <div class="insights-loading-spinner"></div>
+                <p>Querying data and generating insights...</p>
+            </div>
+        `;
+
+        try {
+            const response = await fetch('/api/insights', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    company_name: companyName,
+                    start_date: startDate,
+                    end_date: endDate,
+                    attribute: attribute
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                results.innerHTML = `
+                    <div class="insights-placeholder insights-error">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="#FF6B6B"/>
+                        </svg>
+                        <p>${data.error}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Build results HTML
+            const columnLabel = attribute.split('.')[1].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const tableLabel = data.table.charAt(0).toUpperCase() + data.table.slice(1);
+
+            let filtersHtml = '';
+            if (data.filters.company_name || data.filters.start_date || data.filters.end_date) {
+                const activeFilters = [];
+                if (data.filters.company_name) activeFilters.push(`Company: "${data.filters.company_name}"`);
+                if (data.filters.start_date) activeFilters.push(`From: ${data.filters.start_date}`);
+                if (data.filters.end_date) activeFilters.push(`To: ${data.filters.end_date}`);
+                filtersHtml = `<div class="insights-filters-applied">Filters: ${activeFilters.join(' | ')}</div>`;
+            }
+
+            let insightsHtml = '';
+            if (data.insights && data.insights.length > 0) {
+                insightsHtml = data.insights.map((item, index) => `
+                    <div class="insight-row">
+                        <div class="insight-rank">${index + 1}</div>
+                        <div class="insight-details">
+                            <div class="insight-value">${item.value}</div>
+                            <div class="insight-bar-container">
+                                <div class="insight-bar" style="width: ${item.percentage}%"></div>
+                            </div>
+                        </div>
+                        <div class="insight-stats">
+                            <span class="insight-count">${item.count.toLocaleString()}</span>
+                            <span class="insight-pct">${item.percentage}%</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                insightsHtml = '<div class="insights-no-data">No data found for the selected filters</div>';
+            }
+
+            results.innerHTML = `
+                <div class="insights-results-content">
+                    <div class="insights-header-row">
+                        <h4>${columnLabel}</h4>
+                        <span class="insights-table-badge">${tableLabel}</span>
+                    </div>
+                    ${filtersHtml}
+                    <div class="insights-summary">
+                        <div class="insights-stat">
+                            <span class="insights-stat-value">${data.total_records.toLocaleString()}</span>
+                            <span class="insights-stat-label">Total Records</span>
+                        </div>
+                        <div class="insights-stat">
+                            <span class="insights-stat-value">${data.unique_values.toLocaleString()}</span>
+                            <span class="insights-stat-label">Unique Values</span>
+                        </div>
+                    </div>
+                    <div class="insights-list">
+                        ${insightsHtml}
+                    </div>
+                </div>
+            `;
+
+        } catch (error) {
+            console.error('Error fetching insights:', error);
+            results.innerHTML = `
+                <div class="insights-placeholder insights-error">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="#FF6B6B"/>
+                    </svg>
+                    <p>Failed to fetch insights: ${error.message}</p>
+                </div>
+            `;
+        } finally {
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/>
+                </svg>
+                Generate Next Best Recommendation
+            `;
+        }
+    });
+
+    // Close panel when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!panel.contains(e.target) && !trigger.contains(e.target) && panel.classList.contains('open')) {
+            panel.classList.remove('open');
+            botIcon.style.display = 'block';
+            closeIcon.style.display = 'none';
+            trigger.classList.remove('active');
+        }
+    });
+});
+</script>

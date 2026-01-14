@@ -20,9 +20,43 @@
                 <li><strong>Reviews Dataset</strong> - Customer reviews and sentiment analysis</li>
             </ul>
 
-            <div class="placeholder-text">
-                Data explorer and query interface coming soon
+            <div style="margin-top: 24px;">
+                <button class="request-data-access-btn" onclick="requestDataAccess()">
+                    <span style="font-size: 32px; font-weight: bold;">$</span>
+                    Request Data Access
+                </button>
             </div>
+
+            <style>
+                .request-data-access-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 14px 28px;
+                    background: linear-gradient(135deg, #0770E3 0%, #005AB5 100%);
+                    color: white;
+                    border: none;
+                    border-radius: 10px;
+                    font-size: 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 15px rgba(7, 112, 227, 0.3);
+                }
+                .request-data-access-btn:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(7, 112, 227, 0.4);
+                }
+                .request-data-access-btn:active {
+                    transform: translateY(0);
+                }
+            </style>
+
+            <script>
+                function requestDataAccess() {
+                    alert('Your data access request has been submitted. Our team will review and get back to you shortly.');
+                }
+            </script>
         </div>
     </div>
 

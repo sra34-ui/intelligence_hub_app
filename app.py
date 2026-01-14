@@ -38,6 +38,10 @@ CATALOG = os.environ.get("CATALOG", "users")
 SCHEMA = os.environ.get("SCHEMA", "sultan_alawar")
 
 
+# ============================================================================
+# Main Application Routes
+# ============================================================================
+
 @app.route('/')
 def index():
     """Render the main chat interface"""
@@ -1343,6 +1347,164 @@ def test():
         return jsonify({
             'error': str(e),
             'details': traceback.format_exc()
+        }), 500
+
+
+@app.route('/api/insights', methods=['POST'])
+def get_insights():
+    """Generate insights based on filters from the Insights Bot"""
+    try:
+        data = request.json
+        company_name = data.get('company_name', '').strip()
+        start_date = data.get('start_date', '')
+        end_date = data.get('end_date', '')
+        attribute = data.get('attribute', '')
+
+        if not attribute:
+            return jsonify({'error': 'Please select an insight attribute'}), 400
+
+        # Parse attribute to get table and column
+        parts = attribute.split('.')
+        if len(parts) != 2:
+            return jsonify({'error': 'Invalid attribute format'}), 400
+
+        table_type, column_name = parts
+
+        # Map table types to actual table names
+        table_map = {
+            'flights': 'synced_flights',
+            'hotels': 'synced_hotels',
+            'packages': 'synced_packages',
+            'reviews': 'synced_reviews'
+        }
+
+        if table_type not in table_map:
+            return jsonify({'error': f'Unknown table type: {table_type}'}), 400
+
+        table_name = f"{CATALOG}.{SCHEMA}.{table_map[table_type]}"
+
+        # Get warehouse ID
+        warehouse_id = os.environ.get("DATABRICKS_WAREHOUSE_ID")
+        if not warehouse_id:
+            warehouses = list(w.warehouses.list())
+            for wh in warehouses:
+                if wh.state.value == 'RUNNING':
+                    warehouse_id = wh.id
+                    break
+            if not warehouse_id:
+                return jsonify({'error': 'No running SQL warehouse found'}), 500
+
+        # Build WHERE clause based on filters
+        where_conditions = []
+
+        # Company name filter (search in relevant columns based on table)
+        if company_name:
+            company_columns = {
+                'flights': 'airline',
+                'hotels': 'hotel_name',
+                'packages': 'package_type',
+                'reviews': 'company_name'
+            }
+            company_col = company_columns.get(table_type)
+            if company_col:
+                where_conditions.append(f"LOWER({company_col}) LIKE LOWER('%{company_name}%')")
+
+        # Date filter (search in relevant date columns based on table)
+        if start_date or end_date:
+            date_columns = {
+                'flights': 'departure_date',
+                'hotels': 'check_in_date',
+                'packages': 'departure_date',
+                'reviews': 'review_date'
+            }
+            date_col = date_columns.get(table_type)
+            if date_col:
+                if start_date:
+                    where_conditions.append(f"{date_col} >= '{start_date}'")
+                if end_date:
+                    where_conditions.append(f"{date_col} <= '{end_date}'")
+
+        where_clause = ""
+        if where_conditions:
+            where_clause = "WHERE " + " AND ".join(where_conditions)
+
+        # Build insights query based on the selected attribute
+        # Generate aggregated insights for the selected column
+        query = f"""
+            SELECT
+                {column_name} as attribute_value,
+                COUNT(*) as count,
+                COUNT(*) * 100.0 / SUM(COUNT(*)) OVER() as percentage
+            FROM {table_name}
+            {where_clause}
+            {"WHERE" if not where_clause else "AND"} {column_name} IS NOT NULL
+            GROUP BY {column_name}
+            ORDER BY count DESC
+            LIMIT 10
+        """.replace("WHERE AND", "WHERE")
+
+        # Execute query
+        result = w.statement_execution.execute_statement(
+            warehouse_id=warehouse_id,
+            catalog=CATALOG,
+            schema=SCHEMA,
+            statement=query
+        ).result()
+
+        insights = []
+        if result and result.data_array:
+            for row in result.data_array:
+                insights.append({
+                    'value': str(row[0]) if row[0] is not None else 'N/A',
+                    'count': int(row[1]) if row[1] else 0,
+                    'percentage': round(float(row[2]), 1) if row[2] else 0
+                })
+
+        # Get additional statistics
+        stats_query = f"""
+            SELECT
+                COUNT(*) as total_records,
+                COUNT(DISTINCT {column_name}) as unique_values
+            FROM {table_name}
+            {where_clause}
+        """
+
+        stats_result = w.statement_execution.execute_statement(
+            warehouse_id=warehouse_id,
+            catalog=CATALOG,
+            schema=SCHEMA,
+            statement=stats_query
+        ).result()
+
+        total_records = 0
+        unique_values = 0
+        if stats_result and stats_result.data_array and len(stats_result.data_array) > 0:
+            row = stats_result.data_array[0]
+            total_records = int(row[0]) if row[0] else 0
+            unique_values = int(row[1]) if row[1] else 0
+
+        return jsonify({
+            'success': True,
+            'attribute': attribute,
+            'column_name': column_name,
+            'table': table_type,
+            'total_records': total_records,
+            'unique_values': unique_values,
+            'insights': insights,
+            'filters': {
+                'company_name': company_name,
+                'start_date': start_date,
+                'end_date': end_date
+            }
+        })
+
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"ERROR: Exception in insights endpoint: {error_details}")
+        return jsonify({
+            'error': f'Failed to generate insights: {str(e)}',
+            'details': error_details
         }), 500
 
 

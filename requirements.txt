@@ -3,3 +3,4 @@ databricks-sdk>=0.65.0
 databricks-connect>=15.4.0
 Werkzeug==3.0.1
 gunicorn==21.2.0
+psycopg2-binary>=2.9.9
